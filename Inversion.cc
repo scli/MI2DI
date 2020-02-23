@@ -10,16 +10,19 @@
 #include <string.h>
 #include <math.h>
 #include "MICParaMgr.h"
+#include "CovMat.h"
 using namespace std;
 
 extern "C" { void glasso_(int *, double *, double *, int *, int *, int *, int *, double *, int *, double *, double *, int *, double *, int *); }
 
-Inversion::Inversion(MICData* aData)
+Inversion::Inversion(JointMat* aData)
 {
    mData=aData;
-   mMargin=mData->getPseudoMargin();
-   mJointProbMatrix=mData->getPseudoJointMatrix();
-   mCovMat=mData->getCovMat();
+   mMargin=mData->margin();
+   mJointProbMatrix=mData->joint();
+   
+   CovMat*          cov=new CovMat(aData);
+   mCovMat=cov->getCovMat();
 }
 
 
@@ -102,8 +105,8 @@ Inversion::invertByRemovingLastColumns()
 {//each column should have at least two columns
 
    //int size     = mData->getMaxHiddenSize();
-   int tot_size = mData->getNumHiddenClus();
-   int num_cols = mData->getNumCols();
+   int tot_size = mData->numClus();
+   int num_cols = mData->numCols();
 
    int non_red_col=tot_size-num_cols;
 
@@ -116,13 +119,13 @@ Inversion::invertByRemovingLastColumns()
 
    for(int i=0; i<num_cols; i++)
    {
-       int dim1=mData->getHiddenDim(i);
-       int off1=mData->getHiddenOffset(i);
+       int dim1=mData->dim(i);
+       int off1=mData->offset(i);
 
        for(int j=0; j<num_cols; j++)
        {
-         int dim2=mData->getHiddenDim(j);
-         int off2=mData->getHiddenOffset(j);
+         int dim2=mData->dim(j);
+         int off2=mData->offset(j);
 
          for(int k1=0; k1<dim1-1; k1++)
          {
@@ -157,13 +160,13 @@ Inversion::invertByRemovingLastColumns()
     
     for(int i=0; i<num_cols; i++)
     {
-       int dim1=mData->getHiddenDim(i);
-       int off1=mData->getHiddenOffset(i);
+       int dim1=mData->dim(i);
+       int off1=mData->offset(i);
 
        for(int j=0; j<num_cols; j++)
        {
-         int dim2=mData->getHiddenDim(j);
-         int off2=mData->getHiddenOffset(j);
+         int dim2=mData->dim(j);
+         int off2=mData->offset(j);
 
          for(int k1=0; k1<dim1-1; k1++)
          {
@@ -183,8 +186,8 @@ Inversion::invertByRemovingLastColumns()
 void
 Inversion::invertByLSRegularize()
 {
-   int tot_size = mData->getNumHiddenClus();
-   int num_cols = mData->getNumCols();
+   int tot_size = mData->numClus();
+   int num_cols = mData->numCols();
    int non_red_col=tot_size;//-num_cols;
 
     
@@ -202,13 +205,13 @@ Inversion::invertByLSRegularize()
     
     for(int i=0; i<num_cols; i++)
     {
-       int dim1=mData->getHiddenDim(i);
-       int off1=mData->getHiddenOffset(i);
+       int dim1=mData->dim(i);
+       int off1=mData->offset(i);
 
        for(int j=0; j<num_cols; j++)
        {
-         int dim2=mData->getHiddenDim(j);
-         int off2=mData->getHiddenOffset(j);
+         int dim2=mData->dim(j);
+         int off2=mData->offset(j);
 
          for(int k1=0; k1<dim1; k1++)
          {
@@ -231,8 +234,8 @@ void
 Inversion::invertByLasso()
 {
 
-    int ndim = mData->getNumHiddenClus();
-    int seqlen = mData->getNumCols();
+    int ndim = mData->numClus();
+    int seqlen = mData->numCols();
 
     
     double* rho =new double[ndim*ndim];//= f_matrix_calloc(ndim, sizeof(double));
@@ -269,13 +272,13 @@ Inversion::invertByLasso()
 
     for(int i=0; i<seqlen; i++)
     {
-      int dim1=mData->getHiddenDim(i);
-      int off1=mData->getHiddenOffset(i);
+      int dim1=mData->dim(i);
+      int off1=mData->offset(i);
         
       for(int j=0; j<seqlen; j++)
       {
-         int dim2=mData->getHiddenDim(j);
-         int off2=mData->getHiddenOffset(j);
+         int dim2=mData->dim(j);
+         int off2=mData->offset(j);
           
          for(int a=0; a<dim1; a++)
          {
@@ -306,12 +309,12 @@ Inversion::invertByLasso()
 	    
 	    for (int i=0; i<seqlen; i++)
         {
-          int dim1=mData->getHiddenDim(i);
-          int off1=mData->getHiddenOffset(i);
+          int dim1=mData->dim(i);
+          int off1=mData->offset(i);
 		  for (int j=0; j<seqlen; j++)
           {
-            int dim2=mData->getHiddenDim(j);
-            int off2=mData->getHiddenOffset(j);
+            int dim2=mData->dim(j);
+            int off2=mData->offset(j);
 		    for (int a=0; a<dim1; a++)
             {
 			   for (int b=0; b<dim2; b++)
@@ -342,8 +345,8 @@ Inversion::invertByLasso()
 		 rho[i*ndim + j] = trialrho;
       for (int i=0; i<seqlen; i++)
       {
-        int dim = mData->getHiddenDim(i);
-        int off = mData->getHiddenOffset(i);
+        int dim = mData->dim(i);
+        int off = mData->offset(i);
 
         for (int a=0; a<dim; a++)
 	 	    for (int b=0; b<dim; b++)
@@ -415,12 +418,12 @@ Inversion::invertByLasso()
 
     for(int i=0; i<seqlen; i++)
     {
-       int dim1=mData->getHiddenDim(i);
-       int off1=mData->getHiddenOffset(i);
+       int dim1=mData->dim(i);
+       int off1=mData->offset(i);
        for(int j=0; j<seqlen; j++)
        {
-          int dim2=mData->getHiddenDim(j);
-          int off2=mData->getHiddenOffset(j);
+          int dim2=mData->dim(j);
+          int off2=mData->offset(j);
            
           for(int a=0; a<dim1; a++)
           {
@@ -706,7 +709,7 @@ Inversion::getInvCorr()
    if(MICParaMgr::_INV_CORR_OPT_==_INV_COV_MAT_FIRST_)
    {
      invertByLSRegularize();
-     int tot_size = mData->getNumHiddenClus();
+     int tot_size = mData->numClus();
      mInvCorrMat=new double *[tot_size];
      for(int i=0; i<tot_size; i++) mInvCorrMat[i]=new double[tot_size];
      
@@ -723,7 +726,7 @@ Inversion::getInvCorr()
    else if(MICParaMgr::_INV_CORR_OPT_==_INV_CORR_MAT_FIRST_)
    {
       double** cov_saved=mCovMat; //save the mCotMat first
-      int tot_size = mData->getNumHiddenClus();
+      int tot_size = mData->numClus();
 
       mCovMat    =new double *[tot_size];
       for(int i=0; i<tot_size; i++) 

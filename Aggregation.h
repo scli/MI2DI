@@ -14,7 +14,7 @@ class Aggregation
 {
     protected:    
         MICData* mData;
-        double** mMIMatrix;
+        double** mDIMatrix;
 
         void getMatrixW(int pos1, int pos2, double** w);
         

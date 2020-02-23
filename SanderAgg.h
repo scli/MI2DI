@@ -4,6 +4,7 @@
 #include "MICData.h"
 #include <vector>
 #include "Aggregation.h"
+#include "JointMat.h"
 using namespace std;
 
 class SanderAgg : public Aggregation
@@ -35,9 +36,10 @@ class SanderAgg : public Aggregation
         void allocateSpace4Sander();
         void computeMU(int pos1, int pos2);
         double computeDI(int pos1, int pos2);
+	JointMat* mMatrix;
 
     public:
-        SanderAgg(MICData* data);
+        SanderAgg(MICData* data, JointMat* mat, double ** inv);
         ~SanderAgg();
         void aggregate();
         double** getPDir() { return mPDir; }

@@ -17,24 +17,29 @@ int main(int argc, char** argv)
     exit(0);
   }
   MICParaMgr::_NUM_PARTITION_CLUSTERS_=1;  
-  ExpressionParser* mParser=new ExpressionParser(argv[1]);
+  ExpressionParser* mParser    =new ExpressionParser(argv[1]);
   DataPartition*    partition  =new DataPartition(mParser->getExpressions(), 
-                                                 mParser->getNumReplications(),
-                                                 mParser->getNumGenes());
+                                                  mParser->getNumReplications(),
+                                                  mParser->getNumGenes());
   partition->partition();
   CntnsData*       conData =partition->getCntnsData();
-  JointMat*       conMat   =new JointMat(conData);
+  JointMat*        conMat  =new JointMat(conData);
+  conData->setMargin(conMat->margin());
+  double** c = conMat->joint();
 
-  conData->setMargin(conMat->getColMean());
-  
-  conData->setJointMatrix(conMat->getJointMean());
+  conData->setJointMatrix(conMat->joint());
   
   MICParaMgr::_PSEUDO_COUNT_WEIGHT_=0;
 
-  PseudoCount*     conPseudo=new PseudoCount(conData);
-  conData->setPseudoMargin(conPseudo->getPSMargin());
-  conData->setPseudoJointMatrix(conPseudo->getPSJoint());
-  CovMat*            conCov=new CovMat(conData);
+  PseudoCount*     conPseudo=new PseudoCount(conMat, NULL, _CONTINUOUS_);
+  //conData->setPseudoMargin(conPseudo->getPSMargin());
+  //conData->setPseudoJointMatrix(conPseudo->getPSJoint());
+  
+  
+  //JointMat conData=new JointMat(conPseudo->pseudoMat());
+  
+  CovMat*            conCov=new CovMat(conPseudo->pseudoMat());
+  cout<<"i reach here "<<endl;
   
   double** mat = conCov->getCovMat();
   int ncol=conData->getNumCols();

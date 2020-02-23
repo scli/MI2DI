@@ -5,9 +5,9 @@ using namespace std;
 int main(int argc, char** argv)
 {
 
-   if(argc!=5)
+   if(argc!=5 && argc!=4)
    {
-      cerr<<argv[0]<<"matrix_name output_name dimension eta"<<endl;
+      cerr<<argv[0]<<" matrix_name output_name dimension eta"<<endl;
       exit(0);
    }
 

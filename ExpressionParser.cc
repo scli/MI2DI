@@ -7,7 +7,7 @@ using namespace std;
 ExpressionParser::ExpressionParser(const char* name)
 {
   mGeneNames=new vector<string>(); 
-   readFile(name);
+  readFile(name);
 }
 
 ExpressionParser::~ExpressionParser()
@@ -30,13 +30,13 @@ ExpressionParser::readFile(const char* filename)
   while(!input.eof())
   {
     input.getline(buf, 100000);
-    token=strtok(buf, " \t\n");
+    token=strtok(buf, ", \t\n");
     if(token==NULL) 
         continue;
     while(token!=NULL)
     {
        mGeneNames->push_back(string(token));
-       token=strtok(NULL, " \t\n");
+       token=strtok(NULL, ", \t\n");
     }
     break;
   }
@@ -45,7 +45,7 @@ ExpressionParser::readFile(const char* filename)
   while(!input.eof())
   {
     input.getline(buf, 100000);
-    token=strtok(buf, " \t\n");
+    token=strtok(buf, ", \t\n");
     if(token==NULL) 
         continue;
     double* expression=new double[mGeneNames->size()];
@@ -54,7 +54,7 @@ ExpressionParser::readFile(const char* filename)
     for(int index=0; index<mGeneNames->size(); index++)
     {
       expression[index]=atof(token);
-      token=strtok(NULL, " \t\n");
+      token=strtok(NULL, ", \t\n");
     }
     expressions->push_back(expression);
   }

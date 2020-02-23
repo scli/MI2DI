@@ -28,38 +28,38 @@ ExpEqlPipe::solve()
   JointMat*       conMat   =new JointMat(conData);
   ///cout<<"Computed the distance matrices"<<endl;
   //cout.flush();
-  disData->setMargin(disMat->getColMean());
-  conData->setMargin(conMat->getColMean());
+  disData->setMargin(disMat->margin());
+  conData->setMargin(conMat->margin());
   
-  disData->setJointMatrix(disMat->getJointMean());
-  conData->setJointMatrix(conMat->getJointMean());
+  disData->setJointMatrix(disMat->joint());
+  conData->setJointMatrix(conMat->joint());
   
-  PseudoCount*     disPseudo=new PseudoCount(disData);
-  disData->setPseudoMargin(disPseudo->getPSMargin());
-  disData->setPseudoJointMatrix(disPseudo->getPSJoint());
+  PseudoCount*     disPseudo=new PseudoCount(disMat, NULL, _DISCRETE_);
+  //disData->setPseudoMargin(disPseudo->getPSMargin());
+  //disData->setPseudoJointMatrix(disPseudo->getPSJoint());
 
-  PseudoCount*     conPseudo=new PseudoCount(conData);
-  conData->setPseudoMargin(conPseudo->getPSMargin());
-  conData->setPseudoJointMatrix(conPseudo->getPSJoint());
+  PseudoCount*     conPseudo=new PseudoCount(conMat, NULL, _CONTINUOUS_);
+  //conData->setPseudoMargin(conPseudo->getPSMargin());
+  //conData->setPseudoJointMatrix(conPseudo->getPSJoint());
   
-  CovMat*            disCov=new CovMat(disData);
-  CovMat*            conCov=new CovMat(conData);
+  //CovMat*            disCov=new CovMat(disPseudo->pseudoMat());
+  //CovMat*            conCov=new CovMat(conPseudo->pseudoMat());
   
-  disData->setCovMat(disCov->getCovMat());         
-  conData->setCovMat(conCov->getCovMat());         
+  //disData->setCovMat(disCov->getCovMat());         
+  //conData->setCovMat(conCov->getCovMat());         
   
-  Inversion*      disInverse=new Inversion(disData);
+  Inversion*      disInverse=new Inversion(disPseudo->pseudoMat());
   disInverse->inverse();
   disData->setInverseMat(disInverse->getInvMat());
 
-  Inversion*      conInverse=new Inversion(conData);
+  Inversion*      conInverse=new Inversion(conPseudo->pseudoMat());
 //  conInverse->inverse();
 //  conData->setInverseMat(conInverse->getInvMat());
   cout<<"I reach here"<<endl;
   cout.flush();
   conData->setInvCorrMat(conInverse->getInvCorr());
    
-  IntegratedAgg*     agg   =new IntegratedAgg(disData, conData);
+  IntegratedAgg*     agg   =new IntegratedAgg(disData, conData, disPseudo->pseudoMat(), disInverse->getInvMat());
   agg->topMIPairs(NULL);
 
 }

@@ -9,6 +9,7 @@
 #include "Inversion.h"
 #include "SanderAgg.h"
 #include "CovMat.h"
+#include "LatentMap.h"
 class SanderPipeline
 {
     AlignmentParser* mParser;

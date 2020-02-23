@@ -81,7 +81,7 @@ InvMat::deconvolution(double** inputMat)
            mInvMat[i][j]=0;
            for(int k=0; k<mDim; k++)
            {
-             mInvMat[i][j]+=(e_val[k]/(1+e_val[k]))*e_vec[i][k]*e_vec[j][j];
+             mInvMat[i][j]+=(e_val[k]/(1+e_val[k]))*e_vec[i][k]*e_vec[j][k];
            }
        }
     }
@@ -102,11 +102,11 @@ InvMat::read(char* filename)
   for(int i=0; i<mDim; i++)
   {
      input.getline(buf, 100000);
-     token=strtok(buf, " \t\n");
+     token=strtok(buf, ", \t\n");
      for(int j=0; j<mDim; j++)
      {
         mCovMat[i][j]=atof(token);   
-        token=strtok(NULL, " \t\n");
+        token=strtok(NULL, ", \t\n");
      }
   }
 }

@@ -9,11 +9,12 @@ AlignData::AlignData(AlignmentParser* parser)
    mParser=parser;
 
    initDataBlock();
-   computeTransition();
+   //computeTransition();
    
    initData();
-   initK22Table();
-   initK1Table();
+   
+   //initK22Table();
+   //initK1Table();
 
    setData();
 
@@ -41,6 +42,7 @@ AlignData::getAAIndex(char C)
    {
        cerr<<"Please specify your input type, "<<endl;
    }
+   return 0;
 }
 
 //initialize raw data
@@ -64,7 +66,7 @@ AlignData::initDataBlock()
 }
 
 
-
+/*
 void
 AlignData::initK22Table()
 {
@@ -122,7 +124,7 @@ AlignData::initK1Table()
   }
 
 }
-
+*/
 
 
 
@@ -167,7 +169,7 @@ AlignData::init21Data()
 }
 
 
-    
+/*    
 double 
 AlignData::K22(int aa_i, int aa_j, int bb_i, int bb_j)
 {
@@ -186,7 +188,7 @@ AlignData::K1(int a, int a_prime)
    f1=mTransition[a][a_prime]/mTransMargin[a_prime];
    return f1;  
     ;
-}
+}*/
 
 ///
 //
@@ -196,6 +198,7 @@ AlignData::K1(int a, int a_prime)
 //
 //
 
+/*
 void
 AlignData::allocateTransition()
 {
@@ -212,11 +215,11 @@ AlignData::allocateTransition()
       }//
    }
 
-}
+}*/
 
 
 
-
+/*
 
 void
 AlignData::computeTransition()
@@ -267,13 +270,14 @@ AlignData::computeTransition()
       }
    }
 }
+*/
 //=======================================
 //
 //
 //
 //=======================================
 
-
+/*
 void
 AlignData::normalize(double** vect, int size)
 {
@@ -293,7 +297,7 @@ AlignData::normalize(double** vect, int size)
           vect[i][j]/=sum;
        }
    }
-}
+}*/
 
 
 void
@@ -308,17 +312,21 @@ AlignData::setData()
      mData=new DiscrData(mNumRows, mNumCols, 21);
      
      mData->setData(mRawData);
-     mData->setK22Table(mK22Table);
-     mData->initK1Table(mK1Table);
+     //mData->setK22Table(mK22Table);
+     //mData->initK1Table(mK1Table);
      for(int i=0; i<mNumCols; i++)
      {
-        mData->setObserveDim(i, 21);
-        mData->setHiddenDim(i, 21);
-        mData->setObserveOffset(i, 21*i);
-        mData->setHiddenOffset(i,  21*i);
+        //mData->setObserveDim(i, 21);
+        //mData->setHiddenDim(i, 21);
+        //mData->setObserveOffset(i, 21*i);
+        //mData->setHiddenOffset(i,  21*i);
+        mData->setDim(i, 21);
+	mData->setOffset(i, 21*i);
+
      }
-     mData->setNumHiddenClusters( 21*mNumCols);
-     mData->setNumObserveClusters(21*mNumCols);
+     mData->setNumClusters( 21*mNumCols);
+     //mData->setNumObserveClusters(21*mNumCols);
      //cout<<mNumCols<<" "<<21*mNumCols<<endl;
    }
+   mMap=new LatentMap();
 }

@@ -1,6 +1,7 @@
 #ifndef _PSEUDO_COUNT_H_
 #define _PSEUDO_COUNT_H_
-#include "MICData.h"
+#include "JointMat.h"
+#include "LatentMap.h"
 class PseudoCount
 {
 
@@ -11,16 +12,19 @@ class PseudoCount
      double** mPseudoMargin;
      double** mJointMatrix;
      double** mMargin;
-
-     MICData* mData;
+     LatentMap* mMap;
+     JointMat*  mData;
+     JointMat*  mPSMat;
+     DataType   mDataType;
   public:
-     PseudoCount(MICData* data);
+     PseudoCount(JointMat* data, LatentMap* map, DataType t);
      ~PseudoCount();
      void psuedoCount();
-     double** getPSJoint() { return  mPseudoJointMatrix; }
+     double** getPSJoint()  { return  mPseudoJointMatrix; }
      double** getPSMargin() { return mPseudoMargin; }
-
-
+     JointMat* pseudoMat()  { return mPSMat;        }
+     //DataType  dataType()   { return mDataType; }
+     //DataType  dataType(DataType t)   { return mDataType=t; }
 
 };
 

@@ -2,14 +2,27 @@
 #include <iostream>
 #include "MICParaMgr.h"
 using namespace std;
-PseudoCount::PseudoCount(MICData* data)
+PseudoCount::PseudoCount(JointMat* data, LatentMap* map, DataType t)
 {
-  mData=data;
-  mJointMatrix=data->getJointMatrix();
-  mMargin         =data->getMargin();
+  mData       = data;
+  mMap        = map;
+  mJointMatrix= data->joint();
+  mMargin     = data->margin();
+  mDataType   = t; 
   allocateSpace();
   psuedoCount();
+  mPSMat      =new JointMat(data->numClus(),
+		            data->numCols(),
+			    data->offset(),
+			    data->dim(),
+			    mPseudoMargin, 
+			    mPseudoJointMatrix);
+
 }
+
+
+
+
 
 PseudoCount::~PseudoCount()
 {
@@ -19,15 +32,20 @@ void
 PseudoCount::psuedoCount()
 {
    
-   //PseudoOpt opt=ParaMgr::PSEUDO_COUNT_OPT;
-   //if(opt==UNIFORM)
-   if(mData->getDataType()==_DISCRETE_)
+   DataOpt opt=MICParaMgr::_DATA_OPT_;
+   
+   //if(opt==_THE_21_) 
+   if(mDataType==_DISCRETE_)
    {
       uniformPseudoCount();
    }
-   else
+   else if(mDataType==_CONTINUOUS_)
    {
      uniformContinuousPseudoCount();
+   }
+   else
+   {
+       cerr<<"Wrong pseudo count data type"<<endl;
    }
 }
 
@@ -35,7 +53,7 @@ PseudoCount::psuedoCount()
 void
 PseudoCount::allocateSpace()
 {
-   int tot_dim=mData->getNumHiddenClus();
+   int tot_dim=mData->numClus();
 
    mPseudoJointMatrix=new double *[tot_dim];
    for(int i=0; i<tot_dim; i++)
@@ -43,19 +61,19 @@ PseudoCount::allocateSpace()
         mPseudoJointMatrix[i]=new double[tot_dim];
    }
 
-   int  num_vars=mData->getNumCols();
+   int  num_vars=mData->numCols();
 
    mPseudoMargin    =new double* [num_vars];
    for(int i=0; i<num_vars; i++)
    {
-        mPseudoMargin[i]=new double[mData->getHiddenDim(i)];
+        mPseudoMargin[i]=new double[mData->dim(i)];
    }
 }
 
 void
 PseudoCount::uniformPseudoCount()
 {
-    int size=mData->getNumHiddenClus();
+    int size=mData->numClus();
     double pseudoCount=MICParaMgr::_PSEUDO_COUNT_WEIGHT_;
 
     for(int i=0; i<size; i++)
@@ -65,16 +83,17 @@ PseudoCount::uniformPseudoCount()
           mPseudoJointMatrix[i][j]=(1.0-pseudoCount)*mJointMatrix[i][j];//+pseudoCount/ALPHABET_SIZE.0/ALPHABET_SIZE.0;
         }
     }
-    int cols=mData->getNumCols();
+    JointMat* source=mMap->source();
+    int cols=mData->numCols();
     for(int i=0; i<cols; i++)
     {
-       int h_dim1=mData->getHiddenDim(i);
-       int o_dim1=mData->getObserveDim(i);
+       int h_dim1= mData->dim(i);
+       int o_dim1=source->dim(i);
        for(int j=0; j<cols; j++)
        {
            if(i==j)  continue;
-           int h_dim2=mData->getHiddenDim(j);
-           int o_dim2=mData->getObserveDim(j);
+           int h_dim2=mData->dim(j);
+           int o_dim2=source->dim(j);
 
            for(int aa1=0; aa1<o_dim1; aa1++)
            {
@@ -84,8 +103,8 @@ PseudoCount::uniformPseudoCount()
                    {
                        for(int bb2=0; bb2<h_dim2; bb2++)
                        {
-                          mPseudoJointMatrix[mData->getHiddenOffset(i)+bb1][mData->getHiddenOffset(j)+bb2]
-                              +=pseudoCount/o_dim1/o_dim2*mData->lookupK22(i, j, bb1, bb2, aa1, aa2);
+                          mPseudoJointMatrix[mData->offset(i)+bb1][mData->offset(j)+bb2]
+                              +=pseudoCount/o_dim1/o_dim2*mMap->lookupK22(i, j, bb1, bb2, aa1, aa2);
                        }
                    }
                }
@@ -122,15 +141,15 @@ PseudoCount::uniformPseudoCount()
 
     for(int i=0; i<cols; i++)
     {
-       int h_dim=mData->getHiddenDim(i);
-       int o_dim=mData->getObserveDim(i);
+       int h_dim=mData->dim(i);
+       int o_dim=source->dim(i);
        
-       int h_off=mData->getHiddenOffset(i);
+       int h_off=mData->offset(i);
        for(int a1=0; a1<h_dim; a1++)
        {
            for(int b=0; b<o_dim; b++)
            {
-               mPseudoJointMatrix[h_off+a1][h_off+a1]+=pseudoCount/h_dim*mData->lookupK1(i, a1, b);
+               mPseudoJointMatrix[h_off+a1][h_off+a1]+=pseudoCount/h_dim*mMap->lookupK1(i, a1, b);
            }
        }//for
 
@@ -156,8 +175,8 @@ PseudoCount::uniformPseudoCount()
     
     for(int i=0; i<cols; i++)
     {
-        int h_dim=mData->getHiddenDim(i);
-        int h_off=mData->getObserveOffset(i);
+        int h_dim=mData->dim(i);
+        int h_off=mData->offset(i);
         for(int j=0; j<h_dim; j++)
         {
           mPseudoMargin[i][j]=mPseudoJointMatrix[h_off+j][h_off+j];//+pseudoCount/ALPHABET_SIZE.0;
@@ -187,7 +206,7 @@ PseudoCount::uniformPseudoCount()
          //  cout<<mPseudoMargin[i][j]<<" ";
         }
        // cout<<endl;
-    }//for*/
+    }//for
 }
 //
 
@@ -195,7 +214,7 @@ PseudoCount::uniformPseudoCount()
 void
 PseudoCount::uniformContinuousPseudoCount()
 {
-    int size=mData->getNumHiddenClus();
+    int size=mData->numClus();
     double pseudoCount=0;MICParaMgr::_PSEUDO_COUNT_WEIGHT_;
 
     for(int i=0; i<size; i++)
@@ -205,19 +224,19 @@ PseudoCount::uniformContinuousPseudoCount()
           mPseudoJointMatrix[i][j]=(1.0-pseudoCount)*mJointMatrix[i][j];//+pseudoCount/ALPHABET_SIZE.0/ALPHABET_SIZE.0;
         }
     }
-    int cols=mData->getNumCols();
+    int cols=mData->numCols();
     for(int i=0; i<cols; i++)
     {
-       int h_dim1=mData->getHiddenDim(i);
+       int h_dim1=mData->dim(i);
        for(int j=0; j<cols; j++)
        {
            if(i==j)  continue;
-           int h_dim2=mData->getHiddenDim(j);
+           int h_dim2=mData->dim(j);
            for(int bb1=0; bb1<h_dim1; bb1++)
            {
               for(int bb2=0; bb2<h_dim2; bb2++)
              {
-                    mPseudoJointMatrix[mData->getHiddenOffset(i)+bb1][mData->getHiddenOffset(j)+bb2]
+                    mPseudoJointMatrix[mData->offset(i)+bb1][mData->offset(j)+bb2]
                          +=pseudoCount/h_dim1/h_dim2*mMargin[i][bb1]*mMargin[j][bb2];//mData->lookupK22(i, j, bb1, bb2, aa1, aa2);
              }
            }
@@ -226,8 +245,8 @@ PseudoCount::uniformContinuousPseudoCount()
 
     for(int i=0; i<cols; i++)
     {
-       int h_dim=mData->getHiddenDim(i);
-       int h_off=mData->getHiddenOffset(i);
+       int h_dim=mData->dim(i);
+       int h_off=mData->offset(i);
        for(int a=0; a<h_dim; a++)
        {
           mPseudoJointMatrix[h_off+a][h_off+a]+=pseudoCount/h_dim*mMargin[i][a]*mMargin[i][a];//
@@ -236,7 +255,7 @@ PseudoCount::uniformContinuousPseudoCount()
     
     for(int i=0; i<cols; i++)
     {
-        int h_dim=mData->getHiddenDim(i);
+        int h_dim=mData->dim(i);
 
         for(int j=0; j<h_dim; j++)
         {

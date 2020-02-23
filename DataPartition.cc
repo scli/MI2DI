@@ -141,22 +141,22 @@ DataPartition::setDiscrData()
    
    mDiscrData=new DiscrData(mNumRows, mNumCols, mMaxNumClusters);
    mDiscrData->setData(mCluData);
-   mDiscrData->setK22Table(mK22Table);
-   mDiscrData->initK1Table(mK1Table);
+   //mDiscrData->setK22Table(mK22Table);
+   //mDiscrData->initK1Table(mK1Table);
    
    int offset1=0;
    int offset2=0;
    for(int i=0; i<mNumCols; i++)
    {
-      mDiscrData->setObserveDim(i, mNumClusters[i]);
-      mDiscrData->setHiddenDim(i,  mNumClusters[i]);
-      mDiscrData->setObserveOffset(i, offset1);
-      mDiscrData->setHiddenOffset(i,  offset2);
+      mDiscrData->setDim(i, mNumClusters[i]);
+      //mDiscrData->setHiddenDim(i,  mNumClusters[i]);
+      mDiscrData->setOffset(i, offset1);
+      //mDiscrData->setHiddenOffset(i,  offset2);
       offset1+=mNumClusters[i];
-      offset2+=mNumClusters[i];
+      //offset2+=mNumClusters[i];
    }
-   mDiscrData->setNumHiddenClusters(offset1);
-   mDiscrData->setNumObserveClusters(offset2);
+   mDiscrData->setNumClusters(offset1);
+   //mDiscrData->setNumObserveClusters(offset2);
    //cout<<offset1<<" "<<offset2<<endl;
    //cout<<mNumCols<<" "<<21*mNumCols<<endl;
 }
@@ -174,14 +174,14 @@ DataPartition::setCntnsData()
    int offset2=0;
    for(int i=0; i<mNumCols; i++)
    {
-      mCntnsData->setObserveDim(i, mNumClusters[i]);
-      mCntnsData->setHiddenDim(i,  mNumClusters[i]);
-      mCntnsData->setObserveOffset(i, offset1);
-      mCntnsData->setHiddenOffset(i,  offset2);
+      mCntnsData->setDim(i, mNumClusters[i]);
+      //mCntnsData->setHiddenDim(i,  mNumClusters[i]);
+      mCntnsData->setOffset(i, offset1);
+      //mCntnsData->setHiddenOffset(i,  offset2);
       offset1+=mNumClusters[i];
-      offset2+=mNumClusters[i];
+      //offset2+=mNumClusters[i];
    }
-   mCntnsData->setNumHiddenClusters(offset1);
-   mCntnsData->setNumObserveClusters(offset2);
+   mCntnsData->setNumClusters(offset1);
+   //mCntnsData->setNumObserveClusters(offset2);
 }
 

@@ -25,12 +25,14 @@ class CntnsData : public MICData
     void     setRawData(CtnDataT** data);
     void     setIndex(DisDataT** indices);
     void     setData(DisDataT** data);
-    void     setObserveDim(int index, int num);
-    void     setHiddenDim(int index, int num);
-    void     setObserveOffset(int index, int num);
-    void     setHiddenOffset(int index, int num);
-    void     setNumHiddenClusters(int num);
-    void     setNumObserveClusters(int num);
+    
+    void     setDim(int index, int num);
+    //void     setHiddenDim(int index, int num);
+    void     setOffset(int index, int num);
+    
+    //void     setHiddenOffset(int index, int num);
+    void     setNumClusters(int num);
+    //void     setNumObserveClusters(int num);
     void     setBounds(double** bounds) { mBounds=bounds; }
     void     setInvCorrMat(double** mat) { mInvCorrMat=mat; }
     double** getInvCorr() { return mInvCorrMat; }

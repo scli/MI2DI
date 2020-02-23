@@ -1,12 +1,12 @@
 #ifndef _INVERSION_H_
 #define _INVERSION_H_
-#include "MICData.h"
+#include "JointMat.h"
 class Inversion
 {
 
      double** mCovMat;
      double** mInvMat;
-     MICData* mData;
+     JointMat* mData;
      double** mMargin;
      double** mJointProbMatrix;
      double** mInvCorrMat;
@@ -20,7 +20,7 @@ class Inversion
      void invertByLSRegularize();
 
    public:
-     Inversion(MICData* data);
+     Inversion(JointMat* data);
      ~Inversion();
      void inverse();
      double** getInvMat() { return mInvMat; }

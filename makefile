@@ -1,18 +1,17 @@
-COMPILER = g++
+COMPILER = g++-9
 
-INCL_DIR =  -I../include
+INCL_DIR =  -I/usr/local/include -I/usr/local/include/gsl/ -I.
 
 HEADERS =
-LIBRARY = -L/user/local/lib/ -lgsl -lstdc++ -lgslcblas -lm -lgfortran -mfpmath=sse -msse3 -funroll-loops 
+LIBRARY = -L/usr/local/lib/ -L/usr/lib/ -L. -lgsl -lstdc++ -lgslcblas -lm -lgfortran -mfpmath=sse -msse3 -funroll-loops 
 SOURCES =
 CONCERTLIBDIR =
 
 OBJECTS =   MICMain.o  MICParaMgr.o AlignmentParser.o Seq.o AlignData.o \
 			MICData.o JointMat.o PseudoCount.o Inversion.o Aggregation.o SanderAgg.o \
 			glasso_psicov.o DiscrData.o CntnsData.o SanderPipeline.o ExpressionParser.o \
-			DataPartition.o ExpEqlPipe.o CovMat.o IntegratedAgg.o
-
-CFLAGS = -m64 -O3 -fexceptions -DNDEBUG 
+			DataPartition.o ExpEqlPipe.o CovMat.o IntegratedAgg.o LatentMap.o 
+CFLAGS = -g -m64  -fexceptions -DNDEBUG 
 
 
 INVERSEOBJECTS= InvMat.o InvMain.cc
@@ -22,10 +21,11 @@ INVERSEOBJECTS= InvMat.o InvMain.cc
 COVOBJECTS = ComputeCov.o  MICParaMgr.o AlignmentParser.o Seq.o AlignData.o \
 			MICData.o JointMat.o PseudoCount.o Inversion.o Aggregation.o SanderAgg.o \
 			glasso_psicov.o DiscrData.o CntnsData.o SanderPipeline.o ExpressionParser.o \
-			DataPartition.o ExpEqlPipe.o CovMat.o IntegratedAgg.o 
+			DataPartition.o ExpEqlPipe.o CovMat.o IntegratedAgg.o LatentMap.o 
 
 
-CFLAGS += -I/usr/local/include
+CFLAGS += -I/usr/local/include -I. 
+#-I/usr/include
 
 all: MICDirect Inverse Covariance
 
@@ -56,6 +56,4 @@ Covariance: $(COVOBJECTS) $(SOURCES) $(HEADERS)
 
 %.o:%.f90
 	$(COMPILER) $(CFLAGS) $(INCL_DIR) -c $<
-
-
 

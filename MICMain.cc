@@ -8,12 +8,12 @@ using namespace std;
 int main(int argc, char** argv)
 {
 
+  cout<<argc<<endl; 
   if(argc!=4 && argc!=3)
   {
     cerr<<"Usage: "<<argv[0]<<" .fasta_file pdbid output"<<endl;
     exit(0);
   } 
-  
   if(argc==4)
   {
     SanderPipeline* sp=new SanderPipeline(argv[1], argv[2]);

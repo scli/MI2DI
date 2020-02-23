@@ -5,11 +5,13 @@
 #include <iostream>
 using namespace std;
 
-IntegratedAgg::IntegratedAgg(DiscrData* disData, CntnsData* conData) 
+IntegratedAgg::IntegratedAgg(DiscrData* disData, CntnsData* conData, JointMat* mat, double** inv) 
     : Aggregation(disData)
 {
 
-  SanderAgg* sanderAgg=new SanderAgg(disData);
+  SanderAgg* sanderAgg=new SanderAgg(disData, mat, inv);
+  mMatrix      =mat; 
+
   mDisPDir     =sanderAgg->getPDir();
   mDisMargin   =sanderAgg->getMargin();
   mCtnInvCorr  =conData->getInvCorr();
@@ -26,11 +28,11 @@ IntegratedAgg::~IntegratedAgg()
 void
 IntegratedAgg::aggregate()
 {
-  for(int i=0; i<mData->getNumCols(); i++)
+  for(int i=0; i<mMatrix->numCols(); i++)
   {
-    for(int j=0; j<mData->getNumCols(); j++)
+    for(int j=0; j<mMatrix->numCols(); j++)
     {
-       mMIMatrix[i][j] =aggregate(i, j);
+       mDIMatrix[i][j] =aggregate(i, j);
     }
   }
 }
@@ -42,11 +44,11 @@ IntegratedAgg::aggregate(int pos1, int pos2)
 {
    double rev=0;
 
-   int dim1=mData->getHiddenDim(pos1);
-   int off1=mData->getHiddenOffset(pos1);
+   int dim1=mMatrix->dim(pos1);
+   int off1=mMatrix->offset(pos1);
 
-   int dim2=mData->getHiddenDim(pos2);
-   int off2=mData->getHiddenOffset(pos2);
+   int dim2=mMatrix->dim(pos2);
+   int off2=mMatrix->offset(pos2);
    rev=0;
    for(int i=0; i<dim1; i++)
    {

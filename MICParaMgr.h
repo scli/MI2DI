@@ -26,6 +26,8 @@ class MICParaMgr
      static InvCorrOpt   _INV_CORR_OPT_;
      static int          _NUM_PARTITION_CLUSTERS_;
      static double       _PSEUDO_COUNT_WEIGHT_;
+
+
 };
 
 

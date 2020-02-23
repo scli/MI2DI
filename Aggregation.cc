@@ -8,10 +8,10 @@ using namespace std;
 Aggregation::Aggregation(MICData* data)
 {
   mData=data;
-  mMIMatrix=new double* [data->getNumCols()];
+  mDIMatrix=new double* [data->getNumCols()];
   for(int i=0; i<data->getNumCols(); i++)
   {
-     mMIMatrix[i]=new double[data->getNumCols()];
+     mDIMatrix[i]=new double[data->getNumCols()];
   }
 }
 
@@ -151,6 +151,8 @@ Aggregation::sanDiago()
 
 }*/
 
+
+//vector times a matrix of dimeneion dim1 X dim2, result stores the results
 void
 Aggregation::vectorTimesMatrix(double* vect, double** mat, int dim1, int dim2, double * result)
 {
@@ -165,6 +167,8 @@ Aggregation::vectorTimesMatrix(double* vect, double** mat, int dim1, int dim2, d
    }//for
 }
 
+
+//vector vect times the transpose of the a matrix mat: result=vect X Mat^t, 
 void
 Aggregation::vectorTimesTranspose(double* vect, double** mat, int dim1, int dim2, double * result)
 {
@@ -178,6 +182,8 @@ Aggregation::vectorTimesTranspose(double* vect, double** mat, int dim1, int dim2
       result[i]=value;
    }//for
 }
+
+//such as the sum of the vect values will be 1, 
 void
 Aggregation::normalize(double* vect, int size)
 {
@@ -193,15 +199,16 @@ Aggregation::normalize(double* vect, int size)
    }
 }
 
+//such as the sume of all the elements in the mat will be 1
 void
-Aggregation::normalize(double** vect, int dim1, int dim2)
+Aggregation::normalize(double** mat, int dim1, int dim2)
 {
    double sum=0;
    for(int i=0; i<dim1; i++)
    {
        for(int j=0; j<dim2; j++)
        {
-          sum+=vect[i][j];
+          sum+=mat[i][j];
        }
    }
 
@@ -209,7 +216,7 @@ Aggregation::normalize(double** vect, int dim1, int dim2)
    {
        for(int j=0; j<dim2; j++)
        {
-          vect[i][j]/=sum;
+          mat[i][j]/=sum;
        }
    }
 }
@@ -217,7 +224,7 @@ Aggregation::normalize(double** vect, int dim1, int dim2)
 
 
 
-
+// result res will store v1 dot 1/v2, element wise 
 void
 Aggregation::innerDivide(double* v1, double* v2, double* res, int size)
 {
@@ -227,6 +234,8 @@ Aggregation::innerDivide(double* v1, double* v2, double* res, int size)
    }
 }
 
+
+//find the maximum absolute difference between vectors v1 and v2, element wise 
 double
 Aggregation::maximum(double* v1, double* v2, int size)
 {
@@ -239,7 +248,7 @@ Aggregation::maximum(double* v1, double* v2, int size)
    return value;
 }
 
-
+//compute two ScoreItems, by the filed score
 
 int itemCmp(const void *_a, const void *_b)
 {   
@@ -251,6 +260,7 @@ int itemCmp(const void *_a, const void *_b)
 }
 
 
+//sort the pairs into decresing order 
 void
 Aggregation::topMIPairs(vector<int>* offset)
 {
@@ -262,7 +272,7 @@ Aggregation::topMIPairs(vector<int>* offset)
    {
       for(int j=i+1; j<mData->getNumCols(); j++)
       {
-          items[which].score=mMIMatrix[i][j];
+          items[which].score=mDIMatrix[i][j];
           items[which].i1   =i;
           items[which].i2   =j;
           which++;
@@ -295,7 +305,7 @@ Aggregation::topMIPairs(vector<int>* offset)
 
 
 
-
+//find the top K ranked pairs. 
 void
 Aggregation::topK(ScoreItem * items, int start, int end, int k, double pivot)
 {

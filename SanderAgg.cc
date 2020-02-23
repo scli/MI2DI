@@ -1,14 +1,16 @@
 #include "SanderAgg.h"
 #include "MICData.h"
+#include "JointMat.h"
 #include <math.h>
 #include <stdlib.h>
 #include <iostream>
 using namespace std;
 
-SanderAgg::SanderAgg(MICData* data) : Aggregation(data)
+SanderAgg::SanderAgg(MICData* data, JointMat* mat, double** inv) : Aggregation(data)
 {
-  mMargin=data->getPseudoMargin();
-  mInvMat=data->getInverseMat();
+  mMatrix=mat; 
+  mMargin=mat->margin();
+  mInvMat=inv;
 
   directInformation();
 }
@@ -23,11 +25,11 @@ SanderAgg::~SanderAgg()
 void
 SanderAgg::aggregate()
 {
-  for(int i=0; i<mData->getNumCols(); i++)
+  for(int i=0; i<mMatrix->numCols(); i++)
   {
-    for(int j=0; j<mData->getNumCols(); j++)
+    for(int j=0; j<mData->numCols(); j++)
     {
-       mMIMatrix[i][j] =aggregate(i, j);
+       mDIMatrix[i][j] =aggregate(i, j);
     }
   }
 }
@@ -37,18 +39,17 @@ SanderAgg::aggregate(int pos1, int pos2)
 {
    double rev=0;
 
-   int dim1=mData->getHiddenDim(pos1);
-   int off1=mData->getHiddenOffset(pos1);
+   int dim1=mMatrix->dim(pos1);
+   int off1=mMatrix->offset(pos1);
 
-   int dim2=mData->getHiddenDim(pos2);
-   int off2=mData->getHiddenOffset(pos2);
+   int dim2=mMatrix->dim(pos2);
+   int off2=mMatrix->offset(pos2);
 
    for(int i=0; i<dim1; i++)
    {
       for(int j=0; j<dim2; j++)
       {
          rev+=fabs(mInvMat[off1+i][off2+j]); 
-         //cout<<mInvMat[ALPHABET_SIZE*pos1+i][ALPHABET_SIZE*pos2+j]<<" "<<endl;
       }
    }
    return rev;
@@ -111,14 +112,14 @@ void
 SanderAgg::allocateSpace4Sander()
 {
    int num_clusters=mData->getMaxHiddenDim();
-   int tot_size    =mData->getNumHiddenClus();
-   mMu1=new double[num_clusters];
-   mMu2=new double[num_clusters];
-   mScale1=new double[num_clusters];
-   mScale2=new double[num_clusters];
+   int tot_size    =mMatrix->numClus();
+   mMu1    =new double[num_clusters];
+   mMu2    =new double[num_clusters];
+   mScale1 =new double[num_clusters];
+   mScale2 =new double[num_clusters];
   
-   new1=new double[num_clusters];
-   new2=new double[num_clusters];
+   new1    =new double[num_clusters];
+   new2    =new double[num_clusters];
   
    mWMatrix=new double* [num_clusters];
    mPFac   =new double* [num_clusters];
@@ -150,22 +151,22 @@ void
 SanderAgg::directInformation()
 {
   allocateSpace4Sander(); 
-  for(int i=0; i<mData->getNumCols(); i++)
+  for(int i=0; i<mMatrix->numCols(); i++)
   {
-      mMIMatrix[i][i]=-1000;
-      for(int j=i+1; j<mData->getNumCols(); j++)
+      mDIMatrix[i][i]=-1000;
+      for(int j=i+1; j<mData->numCols(); j++)
       {
          getMatrixW(i, j, mWMatrix); 
          //fillWMatrix(mWMatrix,ALPHABET_SIZE);
          computeMU(i, j);
-         mMIMatrix[i][j]=computeDI(i, j);
-         if(mMIMatrix[i][j]!=mMIMatrix[i][j])
+         mDIMatrix[i][j]=computeDI(i, j);
+         if(mDIMatrix[i][j]!=mDIMatrix[i][j])
          {
             cerr<<"error identified in MI"<<endl;
             exit(0);
          }
-         mMIMatrix[j][i]=mMIMatrix[i][j];
-         //cerr<<mMIMatrix[j][i]<<" direct"<<endl;
+         mDIMatrix[j][i]=mDIMatrix[i][j];
+         //cerr<<mDIMatrix[j][i]<<" direct"<<endl;
       }
   }
 }
@@ -207,12 +208,12 @@ SanderAgg::sanDiago()
     p=0;
     for (int i=0; i<num_col; i++) 
     {
-       int dim1=mData->getHiddenDim(i);
-       int off1=mData->getHiddenOffset(i);
+       int dim1=mData->dim(i);
+       int off1=mData->offset(i);
        for (int j=0; j<num_col; j++) 
        {
-          int dim2=mData->getHiddenDim(j);
-          int off2=mData->getHiddenOffset(j);
+          int dim2=mData->dim(j);
+          int off2=mData->offset(j);
           
           pcor[i][j] =0;
           for(int k1=0; k1<dim1; k1++)
@@ -270,11 +271,11 @@ SanderAgg::sanDiago()
 void
 SanderAgg::getMatrixW(int pos1, int pos2, double** w)
 {
-   int dim1=mData->getHiddenDim(pos1);
-   int dim2=mData->getHiddenDim(pos2);
+   int dim1=mMatrix->dim(pos1);
+   int dim2=mMatrix->dim(pos2);
 
-   int off1=mData->getHiddenOffset(pos1);
-   int off2=mData->getHiddenOffset(pos2);
+   int off1=mMatrix->offset(pos1);
+   int off2=mMatrix->offset(pos2);
 
     
    for(int i=0; i<dim1; i++)
@@ -315,8 +316,8 @@ SanderAgg::computeMU(int pos1, int pos2)
   double epsilon=1e-4;
   double diff =1.0;
   
-  int dim1=mData->getHiddenDim(pos1);
-  int dim2=mData->getHiddenDim(pos2);
+  int dim1=mMatrix->dim(pos1);
+  int dim2=mMatrix->dim(pos2);
 
   for(int i=0; i<dim1; i++)
   {
@@ -368,11 +369,11 @@ double
 SanderAgg::computeDI(int pos1, int pos2)
 {
   double tiny = 1.0e-100;
-  int dim1=mData->getHiddenDim(pos1);
-  int dim2=mData->getHiddenDim(pos2);
+  int dim1=mMatrix->dim(pos1);
+  int dim2=mMatrix->dim(pos2);
 
-  int off1=mData->getHiddenOffset(pos1);
-  int off2=mData->getHiddenOffset(pos2);
+  int off1=mMatrix->offset(pos1);
+  int off2=mMatrix->offset(pos2);
 
 
 

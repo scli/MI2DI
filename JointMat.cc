@@ -7,19 +7,89 @@ using namespace std;
 
 JointMat::JointMat(MICData* data)
 {
-   mData=data; 
+   mData     = data; 
+   mOffset   = data->offset();
+   mDim      = data->dim();
+    
+   mNumCol   = data->numCols();
+   mTotSize  = data->numClus();
+
 
    allocateSpace();
    computeReplicateWeight();
+   
+   //count the joint sum
    countNumPairs();
-   computeJointMean(); 
+   
+   //take the average
+   computeJointMean();
+
+   //compute the column means, assume the matrix is sym 
    computeColMeans();
+}
+
+JointMat::JointMat(int totSize, int size, int* offset, int* dim)
+{
+   mTotSize=totSize;
+   mNumCol =  size;
+   mOffset =  offset;
+   mDim    =  dim;
+   
+   allocateSpace();
+   //computeReplicateWeight();
+   
+   //count the joint sum
+   //countNumPairs();
+   
+   //take the average
+   //computeJointMean();
+
+   //compute the column means, assume the matrix is sym 
+   //computeColMeans();
+
+     
+}
+
+
+JointMat::JointMat(int totSize, int size, int* offset, int* dim, double** m, double** j)
+{
+    mTotSize=totSize;
+    mNumCol =  size;
+    mOffset = offset;
+    mDim    = dim;
+    mMargin =m;
+    mJoint  =j;
+
 }
 
 JointMat::~JointMat()
 {
-  ;
 }
+
+double 
+JointMat::get(int pos, int dim)
+{
+   return mMargin[pos][dim];
+}
+
+void   
+JointMat::set(int pos, int dim, double value)
+{
+     mMargin[pos][dim]=value;
+}
+
+double 
+JointMat::get(int pos1, int dim1, int pos2, int dim2)
+{
+    return mJoint[mOffset[pos1]+dim1][mOffset[pos2]+dim2];
+}
+
+void   
+JointMat::set(int pos1, int dim1, int pos2, int dim2, double value)
+{
+    mJoint[mOffset[pos1]+dim1][mOffset[pos2]+dim2] = value;
+}
+
 
 //count number of pairs
 //
@@ -32,6 +102,7 @@ JointMat::countNumPairs()
 {
    if(MICParaMgr::_MATRIX_MODE_==_SANDER_)
    {
+      cout<<"I enter here"<<endl;	   
       sanderCountNumPairs();
    }
    else if(MICParaMgr::_MATRIX_MODE_==_LOCAL_WEIGHT_) 
@@ -40,6 +111,7 @@ JointMat::countNumPairs()
    }
 }
 
+//count the number of pairs for the joint matrix. 
 
 void
 JointMat::sanderCountNumPairs()
@@ -47,28 +119,30 @@ JointMat::sanderCountNumPairs()
 
    int num_replicates=mData->getNumRows();
    int size=mData->getNumCols();  
-   //next, count the number of Cia, jb
+
+
+   //for each replications, compute the sum 
    for(int i=0; i<num_replicates; i++)
    {
+      //for cols pos1 and pos2
       for(int pos1=0; pos1<size; pos1++)
       {
-         int index1=mData->getIndex(pos1, i);
-         int off1=mData->getObserveOffset(pos1);
+         int index1    = mData->getIndex(pos1, i);
+         int off1      = mData->offset(pos1);
          double value1 = mData->getValue(pos1, i);
          
-         mColSum[pos1][index1]+=value1*1/mReplicateWeight[i];
+         mMargin[pos1][index1]+=value1*1/mReplicateWeight[i];
          
          for(int pos2=0; pos2<size; pos2++)
          {
-            int off2=mData->getObserveOffset(pos2);
-            int index2=mData->getIndex(pos2, i);
+            int off2      = mData->offset(pos2);
+            int index2    = mData->getIndex(pos2, i);
             double value2 = mData->getValue(pos2, i);
             //cout<<off1<<" "<<index1<<" "<<off2<<" "<<index2<<endl;
-            mJointSum[off1+index1][off2+index2]+=value1*value2/mReplicateWeight[i];
-         }//for
+            mJoint[off1+index1][off2+index2]+=value1*value2/mReplicateWeight[i]; //the replication has a weight.
+            //cout<<value1*value2<<endl;
+	 }//for
       }//for
-     // cout<<i<<" "<<(1/pairs[0])<<" "<<(1/singular[0])<<endl;
-     //cout<<i<<" "<<mReplicateWeight[i]<<endl;
    }
 
    //setup the defaults weights
@@ -77,9 +151,9 @@ JointMat::sanderCountNumPairs()
 
    for(int i=0; i<size; i++)
    {
-      mSingularWeights[i]=total;
+      mSingularWeights[i]=total; //the total weight
       for(int j=0; j<size; j++)
-        mWeights[i][j]=total;
+        mWeights[i][j]=total; //the weeight for each pair
    }
    //exit(0);
 }
@@ -90,7 +164,9 @@ JointMat::localCountNumPairs()
 {
    int num_replicates=mData->getNumRows();
    int size=mData->getNumCols();
-   double* pairs=new double[size*size];
+   
+   
+   double* pairs   =new double[size*size];
    double* singular=new double[size];
 
 
@@ -100,18 +176,18 @@ JointMat::localCountNumPairs()
       
       for(int pos1=0; pos1<size; pos1++)
       {
-         int index1=mData->getIndex(pos1, i);
-         int off1=mData->getObserveOffset(pos1);
-         double value1 = mData->getValue(pos1, i);
-         mColSum[pos1][index1]+=value1*singular[pos1];
+         int index1            = mData->getIndex(pos1, i);
+         int off1              = mData->offset(pos1);
+         double value1         = mData->getValue(pos1, i);
+         mMargin[pos1][index1]+= value1*singular[pos1];
          
          for(int pos2=0; pos2<size; pos2++)
          {
-            int off2=mData->getObserveOffset(pos2);
+            int off2      = mData->offset(pos2);
             double value2 = mData->getValue(pos2, i);
 
-            int index2=mData->getIndex(pos2, i);
-            mJointSum[off1+index1][off2+index2]+=value1*value2*pairs[pos1*size+pos2];
+            int index2    = mData->getIndex(pos2, i);
+            mJoint[off1+index1][off2+index2]+=value1*value2*pairs[pos1*size+pos2];
          }
       }//for
    }
@@ -190,7 +266,7 @@ void
 JointMat::computeJointMean()
 {
 
-   int num_cols = mData->getNumCols();
+   int num_cols = mNumCol;
  
    for(int i=0; i<num_cols; i++)
    {
@@ -201,41 +277,55 @@ JointMat::computeJointMean()
    }
 }
 
+
+//I think you need a hidden conversion 
 void
 JointMat::computeSubMatrixMean(int pos1, int pos2)
 {
-   int off1=mData->getHiddenOffset(pos1);
-   int off2=mData->getHiddenOffset(pos2);
+   int off1=mOffset[pos1];
+   int off2=mOffset[pos2];
 
-   int dim1=mData->getHiddenDim(pos1);
-   int dim2=mData->getHiddenDim(pos2);
+   int dim1=mDim[pos1];
+   int dim2=mDim[pos2];
    
+   double sum=0;
    for(int h1=0; h1<dim1; h1++)
    {
       for(int h2=0; h2<dim2; h2++)
       {
-        mJointMean[off1+h1][off2+h2]=getJointMean(pos1, pos2, h1, h2);
-      }
-   }
+	 mJoint[off1+h1][off2+h2] =joint(pos1, pos2, h1, h2);
+      }//for
+   }//for
+
+   //for(int h1=0; h1<dim1; h1++)
+   //{
+   //   for(int h2=0; h2<dim2; h2++)
+   //   {
+	//sum+=joint(pos1, pos2, h1, h2);      
+     //   mJoint[off1+h1][off2+h2]/=sum; 
+     // }//for
+   //}//for
 }
 
-
 double
-JointMat::getJointMean(int col_id1, int col_id2, int hidden1, int hidden2)
+JointMat::joint(int col_id1, int col_id2, int hidden1, int hidden2)
 {
-   if(MICParaMgr::_MATRIX_MODE_==_SANDER_)
-   {
-      int off1 =   mData->getObserveOffset(col_id1);
-      int off2 =   mData->getObserveOffset(col_id2);
-      return mJointSum[off1+hidden1][off2+hidden2]/mWeights[col_id1][col_id2];
-   }
+   //return mJoint[mOffset[col_id1]+hidden1][mOffset[col_id2]+hidden2];	
+
+   	
+   //if(MICParaMgr::_MATRIX_MODE_==_SANDER_)
+   //{
+      int off1 =   mData->offset(col_id1);
+      int off2 =   mData->offset(col_id2);
+      return mJoint[off1+hidden1][off2+hidden2]/mWeights[col_id1][col_id2];
+   /*}
    else if(MICParaMgr::_MATRIX_MODE_==_LOCAL_WEIGHT_) 
    {
       double rev=0;
-      int num_obs1=mData->getObserveDim(col_id1);
-      int num_obs2=mData->getObserveDim(col_id2);
+      int num_obs1=mData->dim(col_id1);
+      int num_obs2=mData->dim(col_id2);
 
-      int off1 =   mData->getObserveOffset(col_id1);
+      int off1 =   mData->offset(col_id1);
       int off2 =   mData->getObserveOffset(col_id2);
 
       for(int obs1=0; obs1<num_obs1; obs1++)
@@ -250,8 +340,7 @@ JointMat::getJointMean(int col_id1, int col_id2, int hidden1, int hidden2)
    else
    {
       cerr<<"matrix mode is unspecified!"<<endl;
-   }
-
+   }*/
 }
 //
 //
@@ -263,25 +352,31 @@ JointMat::getJointMean(int col_id1, int col_id2, int hidden1, int hidden2)
 void
 JointMat::computeColMeans()
 {
-   int size = mData->getNumCols();
+   int size = numCols();
    for(int i=0; i<size; i++)
    {
-      int dim=mData->getHiddenDim(i);
+      int dim=mDim[i];
+      double sum=0;
       for(int j=0; j<dim; j++)
       {
-        mColMean[i][j]=getColMean(i, j);
+        mMargin[i][j]=margin(i, j);
       }
+
+      //for(int j=0; j<dim; j++)
+      //{
+      //  mMargin[i][j]/=sum;//=margin()(i, j);
+     // }
    }
 }
 
 double
-JointMat::getColMean(int col_id, int hidden_clu)
+JointMat::margin(int col_id, int hidden_clu)
 {
-   if(MICParaMgr::_MATRIX_MODE_==_SANDER_)
-   {
-      return mColSum[col_id][hidden_clu]/mSingularWeights[col_id];
-   }
-   else if(MICParaMgr::_MATRIX_MODE_==_LOCAL_WEIGHT_) 
+   //if(MICParaMgr::_MATRIX_MODE_==_SANDER_)
+   //{
+      return mMargin[col_id][hidden_clu]/mSingularWeights[col_id];
+   //}
+   /*else if(MICParaMgr::_MATRIX_MODE_==_LOCAL_WEIGHT_) 
    {
      double rev=0;  
      int num_obs=mData->getObserveDim(col_id);
@@ -291,39 +386,39 @@ JointMat::getColMean(int col_id, int hidden_clu)
        rev+=mColSum[col_id][i]/mSingularWeights[col_id]*mData->lookupK1(col_id, hidden_clu, i);
      }
      return rev;
-   }
+   }*/
 }
 
 void
 JointMat::allocateSpace()
 {
 
-   int size     = mData->getNumCols();
-   int tot_size = mData->getNumHiddenClus();
+   int size     = mNumCol;
+   int tot_size = mTotSize;
   
    //cout<<size<<" "<<tot_size<<endl;
    //exit(0);
-   mJointMean =new double *[tot_size]; //to score the joint frequencies
+   mJoint =new double *[tot_size]; //to score the joint frequencies
    for(int i=0; i< tot_size; i++)
    {
-      mJointMean[i]=new double[tot_size];
+      mJoint[i]=new double[tot_size];
       for(int j=0; j<tot_size; j++)
       {
-         mJointMean[i][j]=0;
+         mJoint[i][j]=0;
       }
    }
 
-   mColMean=new double *[size]; //to score the single column frequencies
+   mMargin=new double *[size]; //to score the single column frequencies
    for(int i=0; i<size; i++)
    {
-     mColMean[i]=new double[mData->getHiddenDim(i)];
-     for(int j=0; j<mData->getHiddenDim(i); j++)
+     mMargin[i]=new double[dim(i)];
+     for(int j=0; j<dim(i); j++)
      {
-         mColMean[i][j]=0;
+         mMargin[i][j]=0;
      }
    }
 
-   int tot_obs_size=mData->getNumObserveClus();
+ /*  int tot_obs_size=mData->getNumObserveClus();
 
    mJointSum = new double* [tot_obs_size];
    for(int i=0; i<tot_obs_size; i++)
@@ -345,7 +440,7 @@ JointMat::allocateSpace()
         mColSum[i][j]=0;
       }
    }
-
+*/
    mWeights    =new double *[size]; //number of pairs for each (i, j)
    for(int i=0; i<size; i++)
    {
@@ -394,23 +489,23 @@ JointMat::computeColMeans()
    int size = mData->getNumCols();
    for(int i=0; i<size; i++)
    {
-      int dim=mData->getHiddenDim(i);
+      int dim=mData->dim(i);
       for(int j=0; j<dim; j++)
       {
-        mColMean[i][j]=getColMean(i, j);
+        mMargin[i][j]=margin()(i, j);
       }
    }
    
    for(int i=0; i<size; i++)
    { 
-       int dim    = mData->getHiddenDim(i);
-       int off    = mData->getHiddenOffset(i);
+       int dim    = mData->dim(i);
+       int off    = mData->offset(i);
        int obs_dim= mData->getObserveDim(i);
        for(int a=0; a<dim; a++)
        {
           for(int b=0; b<dim; b++)
           {
-              mJointMean[off+a][off+b]=0;
+              mJoint[off+a][off+b]=0;
           }
        }
 
@@ -419,9 +514,9 @@ JointMat::computeColMeans()
            for(int b=0; b<obs_dim; b++)
            {
              double v=mColSum[i][b]*mData->lookupK1(i, a, b);
-             mJointMean[off+a][off+a]+=mColSum[i][b]*mData->lookupK1(i, a, b);
+             mJoint[off+a][off+a]+=mColSum[i][b]*mData->lookupK1(i, a, b);
            }
-           mJointMean[off+a][off+a]/=mSingularWeights[i];
+           mJoint[off+a][off+a]/=mSingularWeights[i];
        }
     }
 }

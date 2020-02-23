@@ -8,10 +8,10 @@ CntnsData::CntnsData(int numRows, int numCols) : MICData()
 {
    mNumRows = numRows;
    mNumCols = numCols;
-   mObserveDim    =new int[numCols];
-   mHiddenDim     =new int[numCols];
-   mObserveOffset =new int[numCols];
-   mHiddenOffset  =new int[numCols];
+   mDim    =new int[numCols];
+   //mHiddenDim     =new int[numCols];
+   mOffset =new int[numCols];
+   //mHiddenOffset  =new int[numCols];
    mDataType=_CONTINUOUS_;
 }
 
@@ -30,39 +30,44 @@ CntnsData::setIndex(DisDataT** indices)
 }
 
 void
-CntnsData::setObserveDim(int index, int num)
+CntnsData::setDim(int index, int num)
 {
-   mObserveDim[index]=num;
+   mDim[index]=num;
 }
+/*
 void
 CntnsData::setHiddenDim(int index, int num)
 {
    mHiddenDim[index]=num;
-}
+}*/
 
 
 void
-CntnsData::setObserveOffset(int index, int num)
+CntnsData::setOffset(int index, int num)
 {
-   mObserveOffset[index]=num;
+   mOffset[index]=num;
 }
+
+/*
 void
 CntnsData::setHiddenOffset(int index, int num)
 {
    mHiddenOffset[index]=num;
-}
+}*/
 
 void
-CntnsData::setNumHiddenClusters(int num)
+CntnsData::setNumClusters(int num)
 {
-   mNumHiddenClus  = num;
+   mNumClus  = num;
 }
+
+/*
 void
 CntnsData::setNumObserveClusters(int num)
 {
   mNumObserveClus=num;
 }
-
+*/
 //
 //
 //=======================================

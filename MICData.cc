@@ -13,11 +13,11 @@ MICData::mutualInformation(int pos1, int pos2, double** joint, double* margin1, 
    
   double tiny = 1.0e-100;
   
-  int dim1=getHiddenDim(pos1);
-  int dim2=getHiddenDim(pos2);
+  int dim1=dim(pos1);
+  int dim2=dim(pos2);
 
-  int off1=getHiddenOffset(pos1);
-  int off2=getHiddenOffset(pos2);
+  int off1=offset(pos1);
+  int off2=offset(pos2);
 
   double rev=0;
 
@@ -26,12 +26,13 @@ MICData::mutualInformation(int pos1, int pos2, double** joint, double* margin1, 
       for(int j=0; j<dim2; j++)
       {
         if(joint[off1+i][off2+j]!=0)
-        rev+=(joint[off1+i][off2+j]*log((tiny+joint[off1+i][off2+j])/(tiny+margin1[i]* margin2[j])));
+          rev+=(joint[off1+i][off2+j]*log((tiny+joint[off1+i][off2+j])/(tiny+margin1[i]* margin2[j])));
 
   //      cout<<joint[off1+i][off2+j]<<" "<<" "<<margin1[i]<<" "<<margin2[j]<<endl;
       }
   }
-  return rev;
+  return rev; 
+  return 0.0;
 }
 double
 maximum(double a, double b)

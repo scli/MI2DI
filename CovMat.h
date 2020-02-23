@@ -1,15 +1,17 @@
 #ifndef _COV_MAT_H_
 #define _COV_MAT_H_
-#include "MICData.h"
+#include "JointMat.h"
+
+
 class CovMat
 {
-      MICData* mData;
-      double** mMarginMean;
-      double** mJointMat; 
+      JointMat* mData;
+      double** mMargin;
+      double** mJoint; 
       double** mCovMat;
       void calculateCov(); 
    public:
-     CovMat(MICData *aData);
+     CovMat(JointMat *aData);
      double** getCovMat() { return mCovMat; }
 };
 
